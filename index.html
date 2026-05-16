@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -19,7 +20,6 @@
             --panel-bg: #1e1e1e;
             --text-color: #ffffff;
             --accent: #ff9800;
-            --accent-hover: #e68900;
             --border: #333333;
         }
 
@@ -41,7 +41,7 @@
             display: flex;
             flex-direction: column;
             gap: 15px;
-            flex: 1; /* Permite que o container ocupe o espaço disponível empurrando o rodapé */
+            flex: 1;
         }
 
         .header {
@@ -118,10 +118,17 @@
             border: 1px solid #d32f2f;
             padding: 10px;
             margin-top: 10px;
+            transition: all 0.2s;
         }
 
         .btn-danger:active {
             background-color: #331010;
+        }
+
+        .btn-danger.confirm-mode {
+            background-color: #d32f2f;
+            color: white;
+            font-weight: bold;
         }
 
         .btn-play {
@@ -138,13 +145,12 @@
             flex: none;
         }
 
-        .btn-merge {
-            background-color: #5c6bc0;
-            color: white;
-            padding: 8px 12px;
+        .btn-resume {
+            background-color: var(--accent);
+            color: #000;
+            font-weight: bold;
+            padding: 8px 15px;
             flex: none;
-            font-size: 14px;
-            border-radius: 4px;
         }
 
         input[type="range"] {
@@ -188,7 +194,7 @@
             padding: 12px;
             border-radius: 6px;
             border: 2px solid transparent;
-            gap: 10px;
+            gap: 12px;
         }
 
         .loop-item.active-loop {
@@ -208,7 +214,9 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 5px;
+            background-color: #1a1a1a;
+            padding: 10px;
+            border-radius: 8px;
         }
 
         .time-adjuster {
@@ -224,10 +232,11 @@
             background-color: transparent;
             color: var(--text-color);
             border: none;
-            padding: 8px 12px;
-            font-size: 18px;
+            padding: 10px 15px;
+            font-size: 20px;
             flex: none;
             border-radius: 0;
+            line-height: 1;
         }
         
         .time-adjuster button:active {
@@ -238,21 +247,35 @@
             padding: 0 10px;
             font-family: monospace;
             color: var(--accent);
-            font-size: 15px;
-            min-width: 50px;
+            font-size: 16px;
+            min-width: 55px;
             text-align: center;
         }
 
-        .time-label {
-            color: #aaa;
-            font-size: 12px;
-            margin-bottom: 2px;
+        .arrow-separator {
+            color: #777;
+            font-size: 20px;
+            font-weight: bold;
         }
 
-        .adjuster-container {
+        .merge-container {
             display: flex;
-            flex-direction: column;
-            align-items: center;
+            justify-content: center;
+            border-top: 1px dashed #444;
+            padding-top: 10px;
+        }
+
+        .btn-merge {
+            background-color: #2196F3;
+            color: white;
+            padding: 8px 20px;
+            font-size: 14px;
+            flex: none;
+            border-radius: 20px;
+        }
+
+        .btn-merge:active {
+            background-color: #1976D2;
         }
 
         .footer {
@@ -268,7 +291,7 @@
 <body>
 
 <div class="container">
-    <h1 class="header">👞 Loop to Dance</h1>
+    <h1 class="header">🩰 Loop to Dance</h1>
 
     <label class="file-label">
         📁 Selecionar Vídeo
@@ -282,7 +305,7 @@
     <div class="control-panel">
         <div class="row">
             <span>Velocidade:</span>
-            <input type="range" id="speedSlider" min="0.25" max="1.5" step="0.05" value="1">
+            <input type="range" id="speedSlider" min="0.25" max="1.50" step="0.05" value="1">
             <span class="speed-val" id="speedValue">1.00x</span>
         </div>
 
@@ -292,9 +315,9 @@
     </div>
 
     <div class="control-panel" id="loopsPanel" style="display: none;">
-        <h3 style="margin: 0; font-size: 16px;">Trechos</h3>
+        <h3 style="margin: 0; font-size: 16px;">Trechos da Coreografia</h3>
         <div class="saved-loops" id="loopsContainer">
-            <!-- Loops serão injetados aqui -->
+            <!-- Loops injetados via JS -->
         </div>
         <button id="btnClearMarkers" class="btn-danger">Limpar Todas as Marcas</button>
     </div>
@@ -316,55 +339,23 @@
     const loopsPanel = document.getElementById('loopsPanel');
     const loopsContainer = document.getElementById('loopsContainer');
 
-    // Array que armazenará os tempos (em segundos) de cada marcação
     let markers = []; 
-    // Índice do loop que está tocando no momento (baseado no índice inicial do markers)
     let activeLoopIndex = -1; 
+    let clearConfirmTimeout;
     
-    const ADJUST_STEP = 0.2; // Quantidade de segundos a alterar em cada clique
+    const ADJUST_STEP = 0.2; 
 
-    // Service Worker Minimalista para PWA (permite instalação local)
-    if ('serviceWorker' in navigator) {
-        // Um Service Worker inline básico apenas para satisfazer os requisitos de instalação do PWA
-        const swCode = `
-            self.addEventListener('install', (e) => { self.skipWaiting(); });
-            self.addEventListener('activate', (e) => { self.clients.claim(); });
-            self.addEventListener('fetch', (e) => { });
-        `;
-        const blob = new Blob([swCode], { type: 'application/javascript' });
-        const swUrl = URL.createObjectURL(blob);
-        navigator.serviceWorker.register(swUrl).catch(err => console.log('SW Reg falhou:', err));
-    }
-
-    // Gerar Manifesto PWA dinamicamente
-    const manifest = {
-        name: "Loop to Dance",
-        short_name: "Loop to Dance",
-        start_url: ".",
-        display: "standalone",
-        background_color: "#121212",
-        theme_color: "#121212",
-        icons: [{
-            src: "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🩰</text></svg>",
-            sizes: "192x192",
-            type: "image/svg+xml"
-        }]
-    };
-    const manifestBlob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
-    const manifestURL = URL.createObjectURL(manifestBlob);
-    const linkManifest = document.createElement('link');
-    linkManifest.rel = 'manifest';
-    linkManifest.href = manifestURL;
-    document.head.appendChild(linkManifest);
+    // Sincronizar Interface com os Eventos Nativos do Vídeo
+    video.addEventListener('play', renderLoops);
+    video.addEventListener('pause', renderLoops);
 
     // Carregar vídeo local
     upload.addEventListener('change', function(event) {
         const file = event.target.files[0];
         if (file) {
-            const fileURL = URL.createObjectURL(file);
-            video.src = fileURL;
+            video.src = URL.createObjectURL(file);
             video.load();
-            clearAllMarkers();
+            forceClearAllMarkers();
         }
     });
 
@@ -374,62 +365,117 @@
         speedValue.textContent = Number(this.value).toFixed(2) + 'x';
     });
 
-    // Adicionar nova marca no tempo atual do vídeo
+    // Adicionar nova marca
     btnAddMarker.addEventListener('click', () => {
-        const currentTime = video.currentTime;
+        // Arredondar para 1 casa decimal ao criar para evitar bugs matemáticos futuros
+        const currentTime = Math.round(video.currentTime * 10) / 10;
         
-        // Evita marcações duplicadas ou muito próximas
-        if (markers.some(m => Math.abs(m - currentTime) < 0.1)) return;
-
+        if (markers.some(m => Math.abs(m - currentTime) < 0.2)) return;
+        
         markers.push(currentTime);
         markers.sort((a, b) => a - b); 
+        
+        // Mantém o loop atual ativo se inserirmos uma marca ANTES dele
+        if (activeLoopIndex !== -1) {
+            const newIndex = markers.indexOf(currentTime);
+            if (newIndex <= activeLoopIndex) {
+                activeLoopIndex++;
+            }
+        }
         
         renderLoops();
     });
 
-    // Limpar tudo
-    btnClearMarkers.addEventListener('click', clearAllMarkers);
+    // Botão Inteligente de Limpar (Dois Cliques para confirmar)
+    btnClearMarkers.addEventListener('click', () => {
+        if (markers.length === 0) return;
+        
+        if (btnClearMarkers.classList.contains('confirm-mode')) {
+            forceClearAllMarkers();
+            btnClearMarkers.classList.remove('confirm-mode');
+            btnClearMarkers.textContent = "Limpar Todas as Marcas";
+            clearTimeout(clearConfirmTimeout);
+        } else {
+            btnClearMarkers.classList.add('confirm-mode');
+            btnClearMarkers.textContent = "Confirmar Limpeza?";
+            clearConfirmTimeout = setTimeout(() => {
+                btnClearMarkers.classList.remove('confirm-mode');
+                btnClearMarkers.textContent = "Limpar Todas as Marcas";
+            }, 3000);
+        }
+    });
 
-    function clearAllMarkers() {
-        if(markers.length > 0 && !confirm("Tem certeza que deseja apagar todas as marcas?")) return;
+    function forceClearAllMarkers() {
         markers = [];
         activeLoopIndex = -1;
+        video.pause();
         renderLoops();
     }
 
-    // Função auxiliar para gerar letras A, B, C...
+    // Gerador de Letras (A, B, C...)
     function getLabel(index) {
         const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         if (index < 26) return letters[index];
         return letters[Math.floor(index / 26) - 1] + letters[index % 26];
     }
 
-    // Ajustar o valor do marcador (botões + e -)
+    // Ajustar o valor do marcador (+ e -)
     window.adjustMarker = function(index, delta) {
         let newVal = markers[index] + delta;
+        
+        // Arredondamento crítico para evitar problemas de ponto flutuante do JavaScript
+        newVal = Math.round(newVal * 10) / 10;
+        
+        // Bloqueio de colisão (mantém no mínimo 0.2s de distância)
+        if (index > 0 && newVal <= markers[index - 1]) {
+            newVal = markers[index - 1] + 0.2;
+        }
+        if (index < markers.length - 1 && newVal >= markers[index + 1]) {
+            newVal = markers[index + 1] - 0.2;
+        }
         if (newVal < 0) newVal = 0;
-        
+
+        newVal = Math.round(newVal * 10) / 10; // Arredonda novamente após checagem
         markers[index] = newVal;
-        markers.sort((a, b) => a - b);
-        
-        // Mantém o vídeo atualizado com a posição se não estiver tocando
-        if(video.paused) {
+
+        // Visualizar o frame se o vídeo estiver pausado
+        if (video.paused) {
              video.currentTime = newVal;
         }
-
-        activeLoopIndex = -1; // Para o loop por segurança ao editar
+        
         renderLoops();
     };
 
-    // Fundir o trecho atual com o próximo (Remove a marcação intermediária)
+    // Fundir trechos
     window.mergeLoop = function(index) {
-        // Exemplo: se unirmos AB e BC, removemos a marca B (que é o índice index + 1)
         markers.splice(index + 1, 1);
-        activeLoopIndex = -1;
+        if (activeLoopIndex > index) {
+            activeLoopIndex--;
+        }
         renderLoops();
     };
 
-    // Renderizar a interface de loops
+    // Alternar Treinar / Parar / Retomar - LÓGICA TOTALMENTE BLINDADA
+    window.toggleLoop = function(index) {
+        if (activeLoopIndex === index) {
+            if (!video.paused) {
+                // Se está treinando e apertou PARAR -> desativa o loop e pausa o vídeo.
+                activeLoopIndex = -1; 
+                video.pause();
+            } else {
+                // Se estava pausado (Retomar) -> Toca o vídeo novamente.
+                video.play();
+            }
+        } else {
+            // Se clicou em TREINAR em um novo loop
+            activeLoopIndex = index;
+            video.currentTime = markers[index];
+            video.play();
+        }
+        // renderLoops é chamado automaticamente pelos eventos play/pause do vídeo
+    };
+
+    // Renderizar a lista de Trechos
     function renderLoops() {
         loopsContainer.innerHTML = '';
         
@@ -443,12 +489,22 @@
         for (let i = 0; i < markers.length - 1; i++) {
             const startLabel = getLabel(i);
             const endLabel = getLabel(i + 1);
-            const isActive = (activeLoopIndex === i);
             
-            let mergeBtnHTML = '';
-            if (i < markers.length - 2) {
-                const nextEndLabel = getLabel(i + 2);
-                mergeBtnHTML = `<button class="btn-merge" onclick="mergeLoop(${i})" title="Fundir com o próximo trecho">🔗 Fundir ${startLabel}➔${nextEndLabel}</button>`;
+            // Sincronia perfeita com o estado atual do vídeo
+            const isActive = (activeLoopIndex === i);
+            const isPlaying = isActive && !video.paused;
+            
+            let btnClass = 'btn-play';
+            let btnText = 'Treinar';
+
+            if (isActive) {
+                if (isPlaying) {
+                    btnClass = 'btn-stop';
+                    btnText = 'Parar';
+                } else {
+                    btnClass = 'btn-resume';
+                    btnText = 'Retomar';
+                }
             }
             
             const div = document.createElement('div');
@@ -456,20 +512,20 @@
             
             div.innerHTML = `
                 <div class="loop-header">
-                    <span>Trecho ${startLabel} ➔ ${endLabel}</span>
-                    <button class="${isActive ? 'btn-stop' : 'btn-play'}" onclick="toggleLoop(${i})">
-                        ${isActive ? 'Parar' : 'Treinar'}
+                    <span>${startLabel} ➔ ${endLabel}</span>
+                    <button class="${btnClass}" onclick="toggleLoop(${i})">
+                        ${btnText}
                     </button>
                 </div>
                 
-                <div class="loop-controls" style="justify-content: center; gap: 15px; margin-top: 5px;">
+                <div class="loop-controls">
                     <div class="time-adjuster">
                         <button onclick="adjustMarker(${i}, -${ADJUST_STEP})">-</button>
                         <span class="time-display">${markers[i].toFixed(1)}s</span>
                         <button onclick="adjustMarker(${i}, ${ADJUST_STEP})">+</button>
                     </div>
 
-                    <span style="color: #666; font-size: 16px;">➔</span>
+                    <span class="arrow-separator">➔</span>
 
                     <div class="time-adjuster">
                         <button onclick="adjustMarker(${i + 1}, -${ADJUST_STEP})">-</button>
@@ -477,26 +533,19 @@
                         <button onclick="adjustMarker(${i + 1}, ${ADJUST_STEP})">+</button>
                     </div>
                 </div>
-
-                ${mergeBtnHTML ? `<div style="display: flex; justify-content: center; margin-top: 10px;">${mergeBtnHTML}</div>` : ''}
+                
+                ${i < markers.length - 2 ? `
+                <div class="merge-container">
+                    <button class="btn-merge" onclick="mergeLoop(${i})">
+                        🔗 Fundir ${startLabel} ➔ ${getLabel(i+2)}
+                    </button>
+                </div>` : ''}
             `;
             loopsContainer.appendChild(div);
         }
     }
 
-    // Alterna o estado de tocar/parar um loop específico
-    window.toggleLoop = function(index) {
-        if (activeLoopIndex === index) {
-            activeLoopIndex = -1; 
-        } else {
-            activeLoopIndex = index;
-            video.currentTime = markers[index];
-            video.play();
-        }
-        renderLoops();
-    };
-
-    // Motor de repetição de alta precisão
+    // Motor de Repetição
     function checkLoop() {
         if (activeLoopIndex !== -1 && markers.length > activeLoopIndex + 1) {
             let start = markers[activeLoopIndex];
@@ -504,7 +553,6 @@
             
             if (video.currentTime >= end || video.currentTime < start) {
                 video.currentTime = start;
-                video.play();
             }
         }
         requestAnimationFrame(checkLoop);
