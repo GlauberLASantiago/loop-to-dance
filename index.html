@@ -565,7 +565,7 @@
 
         <!-- Container do vídeo com margem direita para scroll -->
         <div class="video-area">
-            <p class="scroll-hint" id="videoTitleHint">↕️ Use a margem direita para rolar a tela</p>
+            <p class="scroll-hint" id="videoTitleHint">↕️ Use a margem para rolar a tela</p>
             <div class="video-wrapper" id="videoContainer">
                 <video id="videoPlayer" controls playsinline></video>
                 <!-- Faixas laterais de segurança: toque aqui rola a página, não o vídeo -->
@@ -897,7 +897,7 @@
                 currentVideoId = null;
                 localStorage.removeItem(STORAGE_KEY);
                 forceClearAllMarkers(true);
-                videoTitleHint.textContent = "↕️ Use a margem direita para rolar a tela";
+                videoTitleHint.textContent = "↕️ Use a margem para rolar a tela";
                 btnClearHistory.classList.remove('confirm-mode');
                 btnClearHistory.textContent = "Limpar Histórico";
                 clearTimeout(historyClearTimeout);
