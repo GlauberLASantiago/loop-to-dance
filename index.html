@@ -113,7 +113,7 @@
             position: absolute;
             top: 0;
             bottom: 0;
-            width: 24px;
+            width: 34px;
             z-index: 20;
         }
 
@@ -604,7 +604,7 @@
         <!-- Painel de Marcação -->
         <div class="control-panel">
             <div class="row">
-                <button id="btnAddMarker" class="btn-main">📍 Marcar (com vídeo em Play)</button>
+                <button id="btnAddMarker" class="btn-main">📍 Marcar</button>
                 <button id="btnAutoMark" class="btn-auto-mark">🎵 Auto</button>
             </div>
         </div>
@@ -706,6 +706,7 @@
         let historyClearTimeout;
         let currentFile = null; // referência ao File para análise de áudio
         const ADJUST_STEP = 0.2;
+        let isPlayRequested = false;
 
         let scale = 1;
         let translateX = 0;
@@ -982,6 +983,7 @@
 
                 selectedLoops.clear();
                 isTraining = false;
+                isPlayRequested = false;
                 resetZoom();
                 saveHistoryToStorage();
                 renderLoops();
@@ -1215,8 +1217,12 @@
         // ======== LÓGICA DE MARCAÇÕES ========
         const btnTrain = document.getElementById('btnTrain');
 
-        video.addEventListener('play', renderLoops);
+        video.addEventListener('play', () => {
+            isPlayRequested = false;
+            renderLoops();
+        });
         video.addEventListener('pause', () => {
+            isPlayRequested = false;
             // Se o usuário pausou manualmente (ex: tocou na barra do vídeo), para o treino
             if (isTraining) {
                 isTraining = false;
@@ -1248,6 +1254,16 @@
                 }
                 modalBtnConfirm.textContent = "Selecionar Vídeo";
                 customModal.style.display = 'flex';
+                return;
+            }
+
+            if ((video.paused || video.ended) && !isPlayRequested) {
+                isPlayRequested = true;
+                video.currentTime = 0;
+                video.play().catch(err => {
+                    console.error("Erro ao reproduzir vídeo:", err);
+                    isPlayRequested = false;
+                });
                 return;
             }
 
