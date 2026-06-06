@@ -1,19 +1,20 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Loop to Dance</title>
     <!-- Favicon exigido pela estrutura -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🩰</text></svg>">
-    
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🩰</text></svg>">
+
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#121212">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Loop to Dance">
-    
+
     <style>
         :root {
             --bg-color: #121212;
@@ -28,11 +29,18 @@
             padding: 10px;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
+            background-image:
+                linear-gradient(rgba(18, 18, 18, 0.82), rgba(18, 18, 18, 0.82)),
+                url('https://raw.githubusercontent.com/GlauberLASantiago/fundos/main/musica/tap-dance.png');
+            background-size: auto 100vh;
+            background-position: center center;
+            background-attachment: fixed;
             color: var(--text-color);
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
         .container {
@@ -85,7 +93,40 @@
             align-items: center;
             justify-content: center;
             border: 1px solid #444;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            transition: width 0.2s ease, left 0.2s ease, border-radius 0.2s ease;
+        }
+
+        /* Quando com zoom ativo: sangra nas laterais ocupando toda a largura da tela */
+        .video-wrapper.is-zoomed {
+            width: 100vw;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 0;
+            border-left: none;
+            border-right: none;
+        }
+
+        /* Faixas laterais invisíveis para rolar a página (só no modo zoom) */
+        .video-scroll-strip {
+            display: none;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 24px;
+            z-index: 20;
+        }
+
+        .video-scroll-strip-left {
+            left: 0;
+        }
+
+        .video-scroll-strip-right {
+            right: 0;
+        }
+
+        .video-wrapper.is-zoomed .video-scroll-strip {
+            display: block;
         }
 
         video {
@@ -132,7 +173,9 @@
             touch-action: manipulation;
         }
 
-        button:active { background-color: #555; }
+        button:active {
+            background-color: #555;
+        }
 
         .btn-main {
             background-color: var(--accent);
@@ -151,33 +194,77 @@
             transition: all 0.2s;
         }
 
-        .btn-danger:active { background-color: #331010; }
+        .btn-danger:active {
+            background-color: #331010;
+        }
+
         .btn-danger.confirm-mode {
             background-color: #d32f2f;
             color: white;
             font-weight: bold;
         }
 
-        .btn-play { background-color: #4CAF50; color: white; padding: 8px 15px; flex: none; min-width: 80px; }
-        .btn-stop { background-color: #f44336; color: white; padding: 8px 15px; flex: none; min-width: 80px; }
-        .btn-resume { background-color: var(--accent); color: #000; font-weight: bold; padding: 8px 15px; flex: none; min-width: 80px; }
-        
-        .btn-merge-inline {
+        /* Botão global Treinar/Parar */
+        .btn-train {
+            background-color: #4CAF50;
+            color: white;
+            font-weight: bold;
+            padding: 8px 18px;
+            flex: none;
+            min-width: 90px;
+            font-size: 15px;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
+
+        .btn-train.is-training {
+            background-color: #f44336;
+        }
+
+        .btn-train:disabled {
+            opacity: 0.35;
+            cursor: default;
+        }
+
+        /* Botão Excluir trecho */
+        .btn-delete {
             background-color: transparent;
-            color: #2196F3;
-            border: 1px solid #2196F3;
-            padding: 8px 12px;
-            font-size: 14px;
+            color: #d32f2f;
+            border: 1px solid #d32f2f;
+            padding: 7px 12px;
+            font-size: 13px;
             flex: none;
             border-radius: 6px;
+            transition: all 0.2s;
         }
-        .btn-merge-inline:active { background-color: #1a3b5c; }
+
+        .btn-delete:active {
+            background-color: #331010;
+        }
+
+        .btn-delete.confirm-delete {
+            background-color: #d32f2f;
+            color: white;
+            font-weight: bold;
+        }
 
         /* Controles de Input (Range e File) */
-        input[type="range"] { flex: 2; height: 30px; }
-        .control-val { min-width: 45px; text-align: right; font-family: monospace; font-size: 16px; }
-        input[type="file"] { display: none; }
-        
+        input[type="range"] {
+            flex: 2;
+            height: 30px;
+        }
+
+        .control-val {
+            min-width: 45px;
+            text-align: right;
+            font-family: monospace;
+            font-size: 16px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
         .file-label {
             background-color: #444;
             color: white;
@@ -191,8 +278,12 @@
         }
 
         /* UI dos Loops */
-        .saved-loops { display: flex; flex-direction: column; gap: 10px; }
-        
+        .saved-loops {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
         .loop-item {
             display: flex;
             flex-direction: column;
@@ -203,9 +294,14 @@
             gap: 12px;
         }
 
-        .loop-item.active-loop {
+        .loop-item {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .loop-item.selected-loop {
             border-color: var(--accent);
-            background-color: #332b1f;
+            background-color: #2b2318;
         }
 
         .loop-header {
@@ -215,8 +311,12 @@
             font-size: 16px;
             font-weight: bold;
         }
-        
-        .header-actions { display: flex; gap: 15px; align-items: center; }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
 
         .loop-controls {
             display: flex;
@@ -240,18 +340,20 @@
             background-color: #222;
             color: var(--accent);
             border: none;
-            padding: 10px 14px; 
+            padding: 10px 14px;
             font-size: 20px;
             flex: none;
             border-radius: 0;
             line-height: 1;
             font-weight: bold;
         }
-        
-        .time-adjuster button:active { background-color: #444; }
+
+        .time-adjuster button:active {
+            background-color: #444;
+        }
 
         .time-adjuster .time-display {
-            padding: 0 10px; 
+            padding: 0 10px;
             font-family: monospace;
             color: var(--text-color);
             font-size: 15px;
@@ -259,7 +361,11 @@
             text-align: center;
         }
 
-        .arrow-separator { color: #777; font-size: 20px; font-weight: bold; }
+        .arrow-separator {
+            color: #777;
+            font-size: 20px;
+            font-weight: bold;
+        }
 
         /* Estilos do Histórico e Miniaturas */
         .history-item {
@@ -271,7 +377,7 @@
             border-left: 4px solid #444;
             gap: 5px;
         }
-        
+
         .history-item.favorite {
             border-left-color: #FFD700;
         }
@@ -316,7 +422,7 @@
             cursor: pointer;
             flex: 1;
         }
-        
+
         .history-title:active {
             opacity: 0.7;
         }
@@ -344,7 +450,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap; /* Permite quebrar linha se ecrã for muito pequeno */
+            flex-wrap: wrap;
+            /* Permite quebrar linha se ecrã for muito pequeno */
             gap: 8px;
         }
 
@@ -363,7 +470,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.85);
+            background: rgba(0, 0, 0, 0.85);
             z-index: 9999;
             align-items: center;
             justify-content: center;
@@ -380,7 +487,7 @@
             text-align: center;
             width: 100%;
             max-width: 400px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
         }
 
         .modal-text {
@@ -415,7 +522,7 @@
             padding: 15px;
             font-size: 16px;
         }
-        
+
         .modal-btn-cancel {
             width: 100%;
             background: transparent;
@@ -429,308 +536,327 @@
             color: #666;
             margin-top: auto;
         }
-
     </style>
 </head>
+
 <body>
 
-<div class="container">
-    <h1 class="header">🩰 Loop to Dance</h1>
+    <div class="container">
+        <h1 class="header">🩰 Loop to Dance</h1>
 
-    <label class="file-label">
-        📁 Selecionar Vídeo (Restaura Salvos)
-        <input type="file" id="videoUpload" accept="video/*">
-    </label>
+        <label class="file-label">
+            📁 Selecionar Vídeo (Restaura Salvos)
+            <input type="file" id="videoUpload" accept="video/*">
+        </label>
 
-    <!-- Controles no topo -->
-    <div class="control-panel top-controls">
-        <div class="row">
-            <span style="font-size: 14px; width: 85px;">Velocidade:</span>
-            <input type="range" id="speedSlider" min="0.25" max="1.50" step="0.05" value="1">
-            <span class="control-val" id="speedValue">1.00x</span>
+        <!-- Controles no topo -->
+        <div class="control-panel top-controls">
+            <div class="row">
+                <span style="font-size: 14px; width: 85px;">Velocidade:</span>
+                <input type="range" id="speedSlider" min="0.25" max="1.50" step="0.05" value="1">
+                <span class="control-val" id="speedValue">1.00x</span>
+            </div>
+            <div class="row">
+                <span style="font-size: 14px; width: 85px;">Zoom:</span>
+                <input type="range" id="zoomSlider" min="1" max="4" step="0.1" value="1">
+                <span class="control-val" id="zoomValue">1.0x</span>
+            </div>
         </div>
-        <div class="row">
-            <span style="font-size: 14px; width: 85px;">Zoom:</span>
-            <input type="range" id="zoomSlider" min="1" max="4" step="0.1" value="1">
-            <span class="control-val" id="zoomValue">1.0x</span>
+
+        <!-- Container do vídeo com margem direita para scroll -->
+        <div class="video-area">
+            <p class="scroll-hint" id="videoTitleHint">↕️ Use a margem direita para rolar a tela</p>
+            <div class="video-wrapper" id="videoContainer">
+                <video id="videoPlayer" controls playsinline></video>
+                <!-- Faixas laterais de segurança: toque aqui rola a página, não o vídeo -->
+                <div class="video-scroll-strip video-scroll-strip-left" id="scrollStripL"></div>
+                <div class="video-scroll-strip video-scroll-strip-right" id="scrollStripR"></div>
+            </div>
+        </div>
+
+        <!-- Painel de Marcação -->
+        <div class="control-panel">
+            <div class="row">
+                <button id="btnAddMarker" class="btn-main">📍 Marcar (com vídeo em Play)</button>
+            </div>
+        </div>
+
+        <!-- Lista de Loops -->
+        <div class="control-panel" id="loopsPanel" style="display: none;">
+            <div class="row" style="align-items: center; gap: 12px;">
+                <h3 style="margin: 0; font-size: 16px; flex: 1;">Trechos da Coreografia</h3>
+                <button id="btnTrain" class="btn-train" disabled>Treinar</button>
+            </div>
+            <p style="font-size: 11px; color: #888; margin: -8px 0 0 0;">Toque em um trecho para selecioná-lo. Trechos
+                seguidos podem ser combinados.</p>
+            <div class="saved-loops" id="loopsContainer">
+                <!-- Loops injetados via JS -->
+            </div>
+            <button id="btnClearMarkers" class="btn-danger">Limpar Todas as Marcas</button>
+        </div>
+
+        <!-- Histórico de Vídeos -->
+        <div class="control-panel">
+            <div class="row" style="align-items: flex-end;">
+                <h3 style="margin: 0; font-size: 16px;">Biblioteca de Vídeos</h3>
+                <button id="btnClearHistory" class="btn-danger"
+                    style="margin:0; padding: 6px 10px; flex: none; font-size: 12px; border-radius: 4px;">Limpar
+                    Histórico</button>
+            </div>
+            <p style="font-size: 11px; color: #888; margin: -5px 0 5px 0;">Toque em um vídeo abaixo para restaurar seus
+                trechos.</p>
+            <div class="saved-loops" id="historyContainer">
+                <!-- Histórico injetado via JS -->
+            </div>
+        </div>
+
+    </div>
+
+    <footer class="footer">
+        Desenvolvido por Glauber Santiago
+    </footer>
+
+    <!-- Modal Customizado para Solicitar Arquivo -->
+    <div id="customModal" class="modal-overlay">
+        <div class="modal-content">
+            <p id="modalText" style="display: none; font-size: 16px; margin-bottom: 15px;"></p>
+            <span class="modal-filename" id="modalFileName">nome_do_arquivo.mp4</span>
+
+            <div style="font-size: 14px; color: #aaa; margin: 10px 0 0 0;">
+                📅 Data do Arquivo: <span id="modalFileDate">--/--/----</span>
+            </div>
+
+            <img id="modalThumb" class="modal-thumb" src="" alt="Miniatura do vídeo">
+
+            <button id="modalBtnConfirm" class="btn-main modal-btn-primary">Selecionar na Galeria</button>
+
+            <div style="font-size: 13px; color: #888; margin: 12px 0 6px 0;">O vídeo tem a duração de</div>
+            <div id="modalDuration"
+                style="font-size: 28px; font-weight: bold; color: var(--accent); font-family: monospace; margin-bottom: 4px;">
+                --:--</div>
+
+            <button id="modalBtnCancel" class="modal-btn-cancel">Cancelar</button>
         </div>
     </div>
 
-    <!-- Container do vídeo com margem direita para scroll -->
-    <div class="video-area">
-        <p class="scroll-hint" id="videoTitleHint">↕️ Use a margem direita para rolar a tela</p>
-        <div class="video-wrapper" id="videoContainer">
-            <video id="videoPlayer" controls playsinline></video>
-        </div>
-    </div>
+    <script>
+        // ======== ELEMENTOS DO DOM ========
+        const video = document.getElementById('videoPlayer');
+        const videoContainer = document.getElementById('videoContainer');
+        const upload = document.getElementById('videoUpload');
+        const videoTitleHint = document.getElementById('videoTitleHint');
 
-    <!-- Painel de Marcação -->
-    <div class="control-panel">
-        <div class="row">
-            <button id="btnAddMarker" class="btn-main">📍 Marcar (com vídeo em Play)</button>
-        </div>
-    </div>
+        const speedSlider = document.getElementById('speedSlider');
+        const speedValue = document.getElementById('speedValue');
+        const zoomSlider = document.getElementById('zoomSlider');
+        const zoomValue = document.getElementById('zoomValue');
 
-    <!-- Lista de Loops -->
-    <div class="control-panel" id="loopsPanel" style="display: none;">
-        <h3 style="margin: 0; font-size: 16px;">Trechos da Coreografia</h3>
-        <div class="saved-loops" id="loopsContainer">
-            <!-- Loops injetados via JS -->
-        </div>
-        <button id="btnClearMarkers" class="btn-danger">Limpar Todas as Marcas</button>
-    </div>
+        const btnAddMarker = document.getElementById('btnAddMarker');
+        const btnClearMarkers = document.getElementById('btnClearMarkers');
+        const loopsPanel = document.getElementById('loopsPanel');
+        const loopsContainer = document.getElementById('loopsContainer');
 
-    <!-- Histórico de Vídeos -->
-    <div class="control-panel">
-        <div class="row" style="align-items: flex-end;">
-            <h3 style="margin: 0; font-size: 16px;">Biblioteca de Vídeos</h3>
-            <button id="btnClearHistory" class="btn-danger" style="margin:0; padding: 6px 10px; flex: none; font-size: 12px; border-radius: 4px;">Limpar Histórico</button>
-        </div>
-        <p style="font-size: 11px; color: #888; margin: -5px 0 5px 0;">Toque em um vídeo abaixo para restaurar seus trechos.</p>
-        <div class="saved-loops" id="historyContainer">
-            <!-- Histórico injetado via JS -->
-        </div>
-    </div>
+        const historyContainer = document.getElementById('historyContainer');
+        const btnClearHistory = document.getElementById('btnClearHistory');
 
-</div>
+        // Modal Elements
+        const customModal = document.getElementById('customModal');
+        const modalFileName = document.getElementById('modalFileName');
+        const modalDuration = document.getElementById('modalDuration');
+        const modalFileDate = document.getElementById('modalFileDate');
+        const modalThumb = document.getElementById('modalThumb');
+        const modalBtnConfirm = document.getElementById('modalBtnConfirm');
+        const modalBtnCancel = document.getElementById('modalBtnCancel');
 
-<footer class="footer">
-    Desenvolvido por Glauber Santiago
-</footer>
+        // ======== ESTADOS DO APP ========
+        let markers = [];
+        let selectedLoops = new Set(); // índices dos trechos selecionados (devem ser contíguos)
+        let isTraining = false;        // se o treinamento está ativo
+        let deleteConfirmIndex = -1;   // índice aguardando confirmação de exclusão
+        let deleteConfirmTimeout = null;
+        let clearConfirmTimeout;
+        let historyClearTimeout;
+        const ADJUST_STEP = 0.2;
 
-<!-- Modal Customizado para Solicitar Arquivo -->
-<div id="customModal" class="modal-overlay">
-    <div class="modal-content">
-        <p id="modalText" style="display: none; font-size: 16px; margin-bottom: 15px;"></p>
-        <span class="modal-filename" id="modalFileName">nome_do_arquivo.mp4</span>
-        
-        <div style="font-size: 15px; color: #ccc; margin: 15px 0; line-height: 1.6;">
-            ⏱️ Duração: <span id="modalDuration">--:--</span><br>
-            📅 Data do Arquivo: <span id="modalFileDate">--/--/----</span>
-        </div>
+        let scale = 1;
+        let translateX = 0;
+        let translateY = 0;
+        let isDragging = false;
+        let startX = 0, startY = 0, lastDistance = 0;
+        let thumbnailCaptured = false;
 
-        <img id="modalThumb" class="modal-thumb" src="" alt="Miniatura do vídeo">
-        
-        <button id="modalBtnConfirm" class="btn-main modal-btn-primary">Selecionar na Galeria</button>
-        <button id="modalBtnCancel" class="modal-btn-cancel">Cancelar</button>
-    </div>
-</div>
+        // ======== LÓGICA DE HISTÓRICO E LOCALSTORAGE ========
+        const STORAGE_KEY = 'loopDance_videoHistory';
+        let videoHistory = {};
+        let currentVideoId = null;
 
-<script>
-    // ======== ELEMENTOS DO DOM ========
-    const video = document.getElementById('videoPlayer');
-    const videoContainer = document.getElementById('videoContainer');
-    const upload = document.getElementById('videoUpload');
-    const videoTitleHint = document.getElementById('videoTitleHint');
-    
-    const speedSlider = document.getElementById('speedSlider');
-    const speedValue = document.getElementById('speedValue');
-    const zoomSlider = document.getElementById('zoomSlider');
-    const zoomValue = document.getElementById('zoomValue');
-    
-    const btnAddMarker = document.getElementById('btnAddMarker');
-    const btnClearMarkers = document.getElementById('btnClearMarkers');
-    const loopsPanel = document.getElementById('loopsPanel');
-    const loopsContainer = document.getElementById('loopsContainer');
-    
-    const historyContainer = document.getElementById('historyContainer');
-    const btnClearHistory = document.getElementById('btnClearHistory');
-    
-    // Modal Elements
-    const customModal = document.getElementById('customModal');
-    const modalFileName = document.getElementById('modalFileName');
-    const modalDuration = document.getElementById('modalDuration');
-    const modalFileDate = document.getElementById('modalFileDate');
-    const modalThumb = document.getElementById('modalThumb');
-    const modalBtnConfirm = document.getElementById('modalBtnConfirm');
-    const modalBtnCancel = document.getElementById('modalBtnCancel');
-
-    // ======== ESTADOS DO APP ========
-    let markers = []; 
-    let activeLoopIndex = -1; 
-    let clearConfirmTimeout;
-    let historyClearTimeout;
-    const ADJUST_STEP = 0.2; 
-    
-    let scale = 1;
-    let translateX = 0;
-    let translateY = 0;
-    let isDragging = false;
-    let startX = 0, startY = 0, lastDistance = 0;
-    let thumbnailCaptured = false; 
-
-    // ======== LÓGICA DE HISTÓRICO E LOCALSTORAGE ========
-    const STORAGE_KEY = 'loopDance_videoHistory';
-    let videoHistory = {}; 
-    let currentVideoId = null;
-
-    function loadHistoryFromStorage() {
-        try {
-            const data = localStorage.getItem(STORAGE_KEY);
-            if (data) videoHistory = JSON.parse(data);
-        } catch (e) {
-            console.error("Erro ao ler localStorage", e);
-            videoHistory = {};
+        function loadHistoryFromStorage() {
+            try {
+                const data = localStorage.getItem(STORAGE_KEY);
+                if (data) videoHistory = JSON.parse(data);
+            } catch (e) {
+                console.error("Erro ao ler localStorage", e);
+                videoHistory = {};
+            }
+            renderHistory();
         }
-        renderHistory();
-    }
 
-    function saveHistoryToStorage() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(videoHistory));
-        renderHistory();
-    }
+        function saveHistoryToStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(videoHistory));
+            renderHistory();
+        }
 
-    function syncCurrentVideoData() {
-        if (!currentVideoId || !videoHistory[currentVideoId]) return;
-        videoHistory[currentVideoId].markers = [...markers];
-        saveHistoryToStorage();
-    }
-
-    // --- FORMATAÇÃO DE TEMPO (Duração) ---
-    function formatDuration(seconds) {
-        if (!seconds || isNaN(seconds)) return '--:--';
-        const h = Math.floor(seconds / 3600);
-        const m = Math.floor((seconds % 3600) / 60);
-        const s = Math.floor(seconds % 60);
-        if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-        return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-    }
-
-    // --- CAPTURA DE DURAÇÃO ---
-    video.addEventListener('loadedmetadata', () => {
-        if (currentVideoId && videoHistory[currentVideoId]) {
-            videoHistory[currentVideoId].duration = video.duration;
+        function syncCurrentVideoData() {
+            if (!currentVideoId || !videoHistory[currentVideoId]) return;
+            videoHistory[currentVideoId].markers = [...markers];
             saveHistoryToStorage();
         }
-    });
 
-    // --- CAPTURA DE MINIATURA AUTOMÁTICA (Corrigido para Android) ---
-    function captureAndSaveThumbnail() {
-        if (thumbnailCaptured || !currentVideoId || !videoHistory[currentVideoId]) return;
+        // --- FORMATAÇÃO DE TEMPO (Duração) ---
+        function formatDuration(seconds) {
+            if (!seconds || isNaN(seconds)) return '--:--';
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
 
-        try {
-            const canvas = document.createElement('canvas');
-            canvas.width = 160; 
-            canvas.height = Math.floor((video.videoHeight / video.videoWidth) * 160) || 120;
-            if (canvas.height === 0 || canvas.width === 0) return;
-
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            // Android frequentemente retorna um frame preto/vazio se capturar cedo demais.
-            // Vamos checar os pixels para garantir que não estamos salvando uma tela preta.
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-            let isBlank = true;
-            for (let i = 0; i < imageData.length; i += 40) { // Verifica 1 a cada 10 pixels por performance
-                if (imageData[i] > 15 || imageData[i+1] > 15 || imageData[i+2] > 15) {
-                    isBlank = false;
-                    break;
-                }
-            }
-
-            if (isBlank) return; // Se a imagem for totalmente escura/preta, aborta e tenta de novo
-
-            const thumbData = canvas.toDataURL('image/jpeg', 0.6); 
-            if (thumbData.length > 1000) { 
-                videoHistory[currentVideoId].thumbnail = thumbData;
+        // --- CAPTURA DE DURAÇÃO ---
+        video.addEventListener('loadedmetadata', () => {
+            if (currentVideoId && videoHistory[currentVideoId]) {
+                videoHistory[currentVideoId].duration = video.duration;
                 saveHistoryToStorage();
-                thumbnailCaptured = true;
             }
-        } catch (e) { console.error("Erro thumb", e); }
-    }
-
-    // Tentar capturar no primeiro frame disponível
-    video.addEventListener('loadeddata', () => {
-        if (currentVideoId && videoHistory[currentVideoId] && !videoHistory[currentVideoId].thumbnail) {
-            video.currentTime = 0.1; // No Android, 0.1s funciona melhor que 0.001s para evitar bugs de keyframe
-        }
-    });
-
-    video.addEventListener('seeked', () => {
-        if (!thumbnailCaptured && video.currentTime <= 0.2 && currentVideoId && videoHistory[currentVideoId]) {
-            captureAndSaveThumbnail();
-            if (thumbnailCaptured) video.currentTime = 0; // Volta para o início exato se der certo
-        }
-    });
-
-    // Fallback de segurança: se o seek inicial der tela preta, ele tenta de novo enquanto o vídeo toca
-    video.addEventListener('timeupdate', () => {
-        if (!thumbnailCaptured && video.currentTime > 0) {
-            captureAndSaveThumbnail();
-        }
-    });
-
-    // Modal Handlers
-    window.requestVideoRestore = function(id) {
-        if (!videoHistory[id]) return;
-        
-        if (id === currentVideoId) {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            return;
-        }
-
-        const modalTextEl = document.getElementById('modalText');
-        if(modalTextEl) modalTextEl.style.display = 'none';
-
-        modalFileName.textContent = videoHistory[id].title;
-        modalDuration.textContent = formatDuration(videoHistory[id].duration);
-        
-        if (videoHistory[id].fileDate) {
-            const fd = new Date(videoHistory[id].fileDate);
-            modalFileDate.textContent = fd.toLocaleDateString('pt-BR');
-        } else {
-            modalFileDate.textContent = "Desconhecida";
-        }
-
-        if (videoHistory[id].thumbnail) {
-            modalThumb.src = videoHistory[id].thumbnail;
-            modalThumb.style.display = 'block';
-        } else {
-            modalThumb.style.display = 'none';
-        }
-        customModal.style.display = 'flex';
-    };
-
-    modalBtnConfirm.addEventListener('click', () => {
-        customModal.style.display = 'none';
-        upload.click(); 
-    });
-
-    modalBtnCancel.addEventListener('click', () => {
-        customModal.style.display = 'none';
-    });
-
-    function renderHistory() {
-        historyContainer.innerHTML = '';
-        const videos = Object.values(videoHistory);
-        
-        if (videos.length === 0) {
-            historyContainer.innerHTML = '<div class="history-empty">Nenhum vídeo no histórico ainda.</div>';
-            return;
-        }
-
-        videos.sort((a, b) => {
-            if (a.isFavorite && !b.isFavorite) return -1;
-            if (!a.isFavorite && b.isFavorite) return 1;
-            return b.lastAccessed - a.lastAccessed;
         });
 
-        videos.forEach(vid => {
-            const dateObj = new Date(vid.lastAccessed);
-            const dateStr = dateObj.toLocaleDateString('pt-BR') + ' ' + dateObj.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-            const marksCount = (vid.markers && vid.markers.length) || 0;
-            const loopCount = marksCount > 1 ? marksCount - 1 : 0;
-            const durationStr = formatDuration(vid.duration);
-            
-            const isCurrentlyOpen = (vid.id === currentVideoId);
-            const borderStyle = isCurrentlyOpen ? 'border: 1px solid var(--accent);' : '';
-            const thumbSrc = vid.thumbnail || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23222"/><text y="50%" x="50%" dominant-baseline="middle" text-anchor="middle" font-size="40">🎥</text></svg>';
+        // --- CAPTURA DE MINIATURA AUTOMÁTICA (Corrigido para Android) ---
+        function captureAndSaveThumbnail() {
+            if (thumbnailCaptured || !currentVideoId || !videoHistory[currentVideoId]) return;
 
-            const div = document.createElement('div');
-            div.className = `history-item ${vid.isFavorite ? 'favorite' : ''}`;
-            div.style.cssText = borderStyle;
-            
-            div.innerHTML = `
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = 160;
+                canvas.height = Math.floor((video.videoHeight / video.videoWidth) * 160) || 120;
+                if (canvas.height === 0 || canvas.width === 0) return;
+
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                // Android frequentemente retorna um frame preto/vazio se capturar cedo demais.
+                // Vamos checar os pixels para garantir que não estamos salvando uma tela preta.
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+                let isBlank = true;
+                for (let i = 0; i < imageData.length; i += 40) { // Verifica 1 a cada 10 pixels por performance
+                    if (imageData[i] > 15 || imageData[i + 1] > 15 || imageData[i + 2] > 15) {
+                        isBlank = false;
+                        break;
+                    }
+                }
+
+                if (isBlank) return; // Se a imagem for totalmente escura/preta, aborta e tenta de novo
+
+                const thumbData = canvas.toDataURL('image/jpeg', 0.6);
+                if (thumbData.length > 1000) {
+                    videoHistory[currentVideoId].thumbnail = thumbData;
+                    saveHistoryToStorage();
+                    thumbnailCaptured = true;
+                }
+            } catch (e) { console.error("Erro thumb", e); }
+        }
+
+        // Tentar capturar no primeiro frame disponível
+        video.addEventListener('loadeddata', () => {
+            if (currentVideoId && videoHistory[currentVideoId] && !videoHistory[currentVideoId].thumbnail) {
+                video.currentTime = 0.1; // No Android, 0.1s funciona melhor que 0.001s para evitar bugs de keyframe
+            }
+        });
+
+        video.addEventListener('seeked', () => {
+            if (!thumbnailCaptured && video.currentTime <= 0.2 && currentVideoId && videoHistory[currentVideoId]) {
+                captureAndSaveThumbnail();
+                if (thumbnailCaptured) video.currentTime = 0; // Volta para o início exato se der certo
+            }
+        });
+
+        // Fallback de segurança: se o seek inicial der tela preta, ele tenta de novo enquanto o vídeo toca
+        video.addEventListener('timeupdate', () => {
+            if (!thumbnailCaptured && video.currentTime > 0) {
+                captureAndSaveThumbnail();
+            }
+        });
+
+        // Modal Handlers
+        window.requestVideoRestore = function (id) {
+            if (!videoHistory[id]) return;
+
+            if (id === currentVideoId) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+
+            const modalTextEl = document.getElementById('modalText');
+            if (modalTextEl) modalTextEl.style.display = 'none';
+
+            modalFileName.textContent = videoHistory[id].title;
+            modalDuration.textContent = formatDuration(videoHistory[id].duration);
+
+            if (videoHistory[id].fileDate) {
+                const fd = new Date(videoHistory[id].fileDate);
+                modalFileDate.textContent = fd.toLocaleDateString('pt-BR');
+            } else {
+                modalFileDate.textContent = "Desconhecida";
+            }
+
+            if (videoHistory[id].thumbnail) {
+                modalThumb.src = videoHistory[id].thumbnail;
+                modalThumb.style.display = 'block';
+            } else {
+                modalThumb.style.display = 'none';
+            }
+            customModal.style.display = 'flex';
+        };
+
+        modalBtnConfirm.addEventListener('click', () => {
+            customModal.style.display = 'none';
+            upload.click();
+        });
+
+        modalBtnCancel.addEventListener('click', () => {
+            customModal.style.display = 'none';
+        });
+
+        function renderHistory() {
+            historyContainer.innerHTML = '';
+            const videos = Object.values(videoHistory);
+
+            if (videos.length === 0) {
+                historyContainer.innerHTML = '<div class="history-empty">Nenhum vídeo no histórico ainda.</div>';
+                return;
+            }
+
+            videos.sort((a, b) => {
+                if (a.isFavorite && !b.isFavorite) return -1;
+                if (!a.isFavorite && b.isFavorite) return 1;
+                return b.lastAccessed - a.lastAccessed;
+            });
+
+            videos.forEach(vid => {
+                const dateObj = new Date(vid.lastAccessed);
+                const dateStr = dateObj.toLocaleDateString('pt-BR') + ' ' + dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                const marksCount = (vid.markers && vid.markers.length) || 0;
+                const loopCount = marksCount > 1 ? marksCount - 1 : 0;
+                const durationStr = formatDuration(vid.duration);
+
+                const isCurrentlyOpen = (vid.id === currentVideoId);
+                const borderStyle = isCurrentlyOpen ? 'border: 1px solid var(--accent);' : '';
+                const thumbSrc = vid.thumbnail || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23222"/><text y="50%" x="50%" dominant-baseline="middle" text-anchor="middle" font-size="40">🎥</text></svg>';
+
+                const div = document.createElement('div');
+                div.className = `history-item ${vid.isFavorite ? 'favorite' : ''}`;
+                div.style.cssText = borderStyle;
+
+                div.innerHTML = `
                 <div class="history-item-content">
                     <img class="history-thumb" src="${thumbSrc}" alt="Thumbnail" onclick="requestVideoRestore('${vid.id}')" style="cursor:pointer;">
                     <div class="history-info">
@@ -751,271 +877,372 @@
                     </div>
                 </div>
             `;
-            historyContainer.appendChild(div);
-        });
-    }
-
-    window.toggleFavorite = function(id) {
-        if (videoHistory[id]) {
-            videoHistory[id].isFavorite = !videoHistory[id].isFavorite;
-            saveHistoryToStorage();
+                historyContainer.appendChild(div);
+            });
         }
-    };
 
-    btnClearHistory.addEventListener('click', () => {
-        if (Object.keys(videoHistory).length === 0) return;
-        
-        if (btnClearHistory.classList.contains('confirm-mode')) {
-            videoHistory = {};
-            currentVideoId = null;
-            localStorage.removeItem(STORAGE_KEY);
-            forceClearAllMarkers(true);
-            videoTitleHint.textContent = "↕️ Use a margem direita para rolar a tela";
-            btnClearHistory.classList.remove('confirm-mode');
-            btnClearHistory.textContent = "Limpar Histórico";
-            clearTimeout(historyClearTimeout);
-            renderHistory();
-        } else {
-            btnClearHistory.classList.add('confirm-mode');
-            btnClearHistory.textContent = "Confirmar Apagar?";
-            historyClearTimeout = setTimeout(() => {
+        window.toggleFavorite = function (id) {
+            if (videoHistory[id]) {
+                videoHistory[id].isFavorite = !videoHistory[id].isFavorite;
+                saveHistoryToStorage();
+            }
+        };
+
+
+        btnClearHistory.addEventListener('click', () => {
+            if (Object.keys(videoHistory).length === 0) return;
+
+            if (btnClearHistory.classList.contains('confirm-mode')) {
+                videoHistory = {};
+                currentVideoId = null;
+                localStorage.removeItem(STORAGE_KEY);
+                forceClearAllMarkers(true);
+                videoTitleHint.textContent = "↕️ Use a margem direita para rolar a tela";
                 btnClearHistory.classList.remove('confirm-mode');
                 btnClearHistory.textContent = "Limpar Histórico";
-            }, 3000);
-        }
-    });
-
-    // ======== PWA ========
-    if ('serviceWorker' in navigator) {
-        const swCode = `self.addEventListener('fetch', () => {});`;
-        const blob = new Blob([swCode], { type: 'application/javascript' });
-        navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
-    }
-
-    // ======== CARREGAR VÍDEO ========
-    upload.addEventListener('change', function(event) {
-        const file = event.target.files[0];
-        if (file) {
-            video.src = URL.createObjectURL(file);
-            video.load();
-            
-            currentVideoId = file.name + '_' + file.size;
-            thumbnailCaptured = false; 
-            
-            if (videoHistory[currentVideoId]) {
-                markers = videoHistory[currentVideoId].markers || [];
-                videoHistory[currentVideoId].lastAccessed = Date.now();
-                // Garante que vídeos antigos sem data ganhem o atributo agora
-                if(!videoHistory[currentVideoId].fileDate && file.lastModified) {
-                    videoHistory[currentVideoId].fileDate = file.lastModified;
-                }
+                clearTimeout(historyClearTimeout);
+                renderHistory();
             } else {
-                markers = [];
-                videoHistory[currentVideoId] = {
-                    id: currentVideoId,
-                    title: file.name,
-                    lastAccessed: Date.now(),
-                    fileDate: file.lastModified || Date.now(),
-                    isFavorite: false,
-                    markers: [],
-                    duration: 0 // Será atualizado no evento loadedmetadata
-                };
+                btnClearHistory.classList.add('confirm-mode');
+                btnClearHistory.textContent = "Confirmar Apagar?";
+                historyClearTimeout = setTimeout(() => {
+                    btnClearHistory.classList.remove('confirm-mode');
+                    btnClearHistory.textContent = "Limpar Histórico";
+                }, 3000);
             }
-            
-            activeLoopIndex = -1;
-            resetZoom();
-            saveHistoryToStorage();
-            renderLoops();
-            
-            videoTitleHint.textContent = `Ativo: ${file.name}`;
-            videoTitleHint.style.color = "var(--accent)";
-            videoTitleHint.style.fontWeight = "bold";
-            
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // ======== PWA ========
+        if ('serviceWorker' in navigator) {
+            const swCode = `self.addEventListener('fetch', () => {});`;
+            const blob = new Blob([swCode], { type: 'application/javascript' });
+            navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => { });
         }
-    });
 
-    // ======== CONTROLES DE VELOCIDADE E ZOOM ========
-    speedSlider.addEventListener('input', function() {
-        video.playbackRate = this.value;
-        speedValue.textContent = Number(this.value).toFixed(2) + 'x';
-    });
+        // ======== CARREGAR VÍDEO ========
+        upload.addEventListener('change', function (event) {
+            const file = event.target.files[0];
+            if (file) {
+                video.src = URL.createObjectURL(file);
+                video.load();
 
-    zoomSlider.addEventListener('input', function() {
-        scale = parseFloat(this.value);
-        applyTransform();
-    });
+                currentVideoId = file.name + '_' + file.size;
+                thumbnailCaptured = false;
 
-    function resetZoom() {
-        scale = 1; translateX = 0; translateY = 0;
-        zoomSlider.value = 1;
-        applyTransform();
-    }
+                if (videoHistory[currentVideoId]) {
+                    markers = videoHistory[currentVideoId].markers || [];
+                    videoHistory[currentVideoId].lastAccessed = Date.now();
+                    // Garante que vídeos antigos sem data ganhem o atributo agora
+                    if (!videoHistory[currentVideoId].fileDate && file.lastModified) {
+                        videoHistory[currentVideoId].fileDate = file.lastModified;
+                    }
+                } else {
+                    markers = [];
+                    videoHistory[currentVideoId] = {
+                        id: currentVideoId,
+                        title: file.name,
+                        lastAccessed: Date.now(),
+                        fileDate: file.lastModified || Date.now(),
+                        isFavorite: false,
+                        markers: [],
+                        duration: 0 // Será atualizado no evento loadedmetadata
+                    };
+                }
 
-    function applyTransform() {
-        const maxTx = (video.clientWidth * scale - videoContainer.clientWidth) / 2;
-        const maxTy = (video.clientHeight * scale - videoContainer.clientHeight) / 2;
-        translateX = maxTx > 0 ? Math.max(Math.min(translateX, maxTx), -maxTx) : 0;
-        translateY = maxTy > 0 ? Math.max(Math.min(translateY, maxTy), -maxTy) : 0;
-        video.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
-        zoomSlider.value = scale;
-        zoomValue.textContent = scale.toFixed(1) + 'x';
-    }
+                activeLoopIndex = -1;
+                resetZoom();
+                saveHistoryToStorage();
+                renderLoops();
 
-    videoContainer.addEventListener('touchstart', (e) => {
-        if (e.touches.length === 1 && scale > 1) {
-            isDragging = true;
-            startX = e.touches[0].clientX - translateX;
-            startY = e.touches[0].clientY - translateY;
-        } else if (e.touches.length === 2) {
+                videoTitleHint.textContent = `Ativo: ${file.name}`;
+                videoTitleHint.style.color = "var(--accent)";
+                videoTitleHint.style.fontWeight = "bold";
+
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        });
+
+        // ======== CONTROLES DE VELOCIDADE E ZOOM ========
+        speedSlider.addEventListener('input', function () {
+            video.playbackRate = this.value;
+            speedValue.textContent = Number(this.value).toFixed(2) + 'x';
+        });
+
+        zoomSlider.addEventListener('input', function () {
+            scale = parseFloat(this.value);
+            applyTransform();
+        });
+
+        function resetZoom() {
+            scale = 1; translateX = 0; translateY = 0;
+            zoomSlider.value = 1;
+            applyTransform();
+        }
+
+        function applyTransform() {
+            // Quando zoom > 1: expande o wrapper para toda a largura da tela (sangra nas laterais)
+            if (scale > 1) {
+                videoContainer.classList.add('is-zoomed');
+            } else {
+                videoContainer.classList.remove('is-zoomed');
+            }
+            const maxTx = (video.clientWidth * scale - videoContainer.clientWidth) / 2;
+            const maxTy = (video.clientHeight * scale - videoContainer.clientHeight) / 2;
+            translateX = maxTx > 0 ? Math.max(Math.min(translateX, maxTx), -maxTx) : 0;
+            translateY = maxTy > 0 ? Math.max(Math.min(translateY, maxTy), -maxTy) : 0;
+            video.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+            zoomSlider.value = scale;
+            zoomValue.textContent = scale.toFixed(1) + 'x';
+        }
+
+        let touchOnStrip = false; // toque iniciou em uma faixa lateral de segurança?
+        const scrollStripL = document.getElementById('scrollStripL');
+        const scrollStripR = document.getElementById('scrollStripR');
+
+        videoContainer.addEventListener('touchstart', (e) => {
+            // Detecta se o toque iniciou numa faixa lateral
+            const t = e.touches[0];
+            touchOnStrip = (scrollStripL.contains(e.target) || scrollStripR.contains(e.target));
+            if (touchOnStrip) return; // deixa o browser rolar a página
+
+            if (e.touches.length === 1 && scale > 1) {
+                isDragging = true;
+                startX = t.clientX - translateX;
+                startY = t.clientY - translateY;
+            } else if (e.touches.length === 2) {
+                isDragging = false;
+                lastDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+            }
+        }, { passive: false });
+
+        videoContainer.addEventListener('touchmove', (e) => {
+            if (touchOnStrip) return; // não bloqueia scroll da página
+
+            if (e.touches.length === 1 && isDragging && scale > 1) {
+                e.preventDefault();
+                translateX = e.touches[0].clientX - startX;
+                translateY = e.touches[0].clientY - startY;
+                applyTransform();
+            } else if (e.touches.length === 2) {
+                e.preventDefault();
+                const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                scale = Math.max(1, Math.min(scale + (currentDistance - lastDistance) * 0.01, 4));
+                lastDistance = currentDistance;
+                applyTransform();
+            }
+        }, { passive: false });
+
+        videoContainer.addEventListener('touchend', () => {
             isDragging = false;
-            lastDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-        }
-    }, { passive: false });
+            touchOnStrip = false;
+        });
 
-    videoContainer.addEventListener('touchmove', (e) => {
-        if (e.touches.length === 1 && isDragging && scale > 1) {
-            e.preventDefault(); 
-            translateX = e.touches[0].clientX - startX;
-            translateY = e.touches[0].clientY - startY;
-            applyTransform();
-        } else if (e.touches.length === 2) {
-            e.preventDefault(); 
-            const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-            scale = Math.max(1, Math.min(scale + (currentDistance - lastDistance) * 0.01, 4)); 
-            lastDistance = currentDistance;
-            applyTransform();
-        }
-    }, { passive: false });
+        // ======== LÓGICA DE MARCAÇÕES ========
+        const btnTrain = document.getElementById('btnTrain');
 
-    videoContainer.addEventListener('touchend', () => { isDragging = false; });
-
-    // ======== LÓGICA DE MARCAÇÕES ========
-    video.addEventListener('play', renderLoops);
-    video.addEventListener('pause', renderLoops);
-
-    btnAddMarker.addEventListener('click', () => {
-        if(!currentVideoId) {
-            modalFileName.textContent = "(Nenhum vídeo carregado)";
-            const modalTextEl = document.getElementById('modalText');
-            if(modalTextEl) {
-                modalTextEl.innerHTML = 'É necessário <b>selecionar um arquivo</b> de vídeo antes de adicionar marcas!';
-                modalTextEl.style.display = 'block';
+        video.addEventListener('play', renderLoops);
+        video.addEventListener('pause', () => {
+            // Se o usuário pausou manualmente (ex: tocou na barra do vídeo), para o treino
+            if (isTraining) {
+                isTraining = false;
             }
-            modalBtnConfirm.textContent = "Selecionar Vídeo";
-            customModal.style.display = 'flex';
-            return;
-        }
-        
-        const currentTime = Math.round(video.currentTime * 10) / 10;
-        if (markers.some(m => Math.abs(m - currentTime) < 0.2)) return;
-        
-        markers.push(currentTime);
-        markers.sort((a, b) => a - b); 
-        
-        if (activeLoopIndex !== -1 && markers.indexOf(currentTime) <= activeLoopIndex) {
-            activeLoopIndex++;
-        }
-        syncCurrentVideoData();
-        renderLoops();
-    });
+            renderLoops();
+        });
 
-    btnClearMarkers.addEventListener('click', () => {
-        if (markers.length === 0) return;
-        
-        if (btnClearMarkers.classList.contains('confirm-mode')) {
-            forceClearAllMarkers();
-            btnClearMarkers.classList.remove('confirm-mode');
-            btnClearMarkers.textContent = "Limpar Todas as Marcas";
-            clearTimeout(clearConfirmTimeout);
-        } else {
-            btnClearMarkers.classList.add('confirm-mode');
-            btnClearMarkers.textContent = "Confirmar Limpeza?";
-            clearConfirmTimeout = setTimeout(() => {
+        btnTrain.addEventListener('click', () => {
+            if (selectedLoops.size === 0) return;
+            if (isTraining) {
+                isTraining = false;
+                video.pause();
+            } else {
+                const sorted = [...selectedLoops].sort((a, b) => a - b);
+                isTraining = true;
+                video.currentTime = markers[sorted[0]];
+                video.play();
+            }
+            renderLoops();
+        });
+
+        btnAddMarker.addEventListener('click', () => {
+            if (!currentVideoId) {
+                modalFileName.textContent = "(Nenhum vídeo carregado)";
+                const modalTextEl = document.getElementById('modalText');
+                if (modalTextEl) {
+                    modalTextEl.innerHTML = 'É necessário <b>selecionar um arquivo</b> de vídeo antes de adicionar marcas!';
+                    modalTextEl.style.display = 'block';
+                }
+                modalBtnConfirm.textContent = "Selecionar Vídeo";
+                customModal.style.display = 'flex';
+                return;
+            }
+
+            const currentTime = Math.round(video.currentTime * 10) / 10;
+            if (markers.some(m => Math.abs(m - currentTime) < 0.2)) return;
+
+            markers.push(currentTime);
+            markers.sort((a, b) => a - b);
+
+            // Resetar seleção ao adicionar nova marcação (índices mudam)
+            selectedLoops.clear();
+            isTraining = false;
+
+            syncCurrentVideoData();
+            renderLoops();
+        });
+
+        btnClearMarkers.addEventListener('click', () => {
+            if (markers.length === 0) return;
+
+            if (btnClearMarkers.classList.contains('confirm-mode')) {
+                forceClearAllMarkers();
                 btnClearMarkers.classList.remove('confirm-mode');
                 btnClearMarkers.textContent = "Limpar Todas as Marcas";
-            }, 3000);
-        }
-    });
-
-    function forceClearAllMarkers(skipSync = false) {
-        markers = [];
-        activeLoopIndex = -1;
-        video.pause();
-        if(!skipSync) syncCurrentVideoData();
-        renderLoops();
-    }
-
-    function getLabel(index) {
-        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        return index < 26 ? letters[index] : letters[Math.floor(index / 26) - 1] + letters[index % 26];
-    }
-
-    window.adjustMarker = function(index, delta) {
-        let newVal = Math.round((markers[index] + delta) * 10) / 10;
-        if (index > 0 && newVal <= markers[index - 1]) newVal = markers[index - 1] + 0.2;
-        if (index < markers.length - 1 && newVal >= markers[index + 1]) newVal = markers[index + 1] - 0.2;
-        if (newVal < 0) newVal = 0;
-
-        markers[index] = Math.round(newVal * 10) / 10;
-        if (video.paused) video.currentTime = markers[index];
-        
-        syncCurrentVideoData();
-        renderLoops();
-    };
-
-    window.mergeLoop = function(index) {
-        markers.splice(index + 1, 1);
-        if (activeLoopIndex > index) activeLoopIndex--;
-        syncCurrentVideoData();
-        renderLoops();
-    };
-
-    window.toggleLoop = function(index) {
-        if (activeLoopIndex === index) {
-            if (!video.paused) { activeLoopIndex = -1; video.pause(); } 
-            else { video.play(); }
-        } else {
-            activeLoopIndex = index;
-            video.currentTime = markers[index];
-            video.play();
-        }
-    };
-
-    function renderLoops() {
-        loopsContainer.innerHTML = '';
-        
-        if (markers.length < 2) {
-            loopsPanel.style.display = 'none';
-            return;
-        }
-
-        loopsPanel.style.display = 'flex';
-
-        for (let i = 0; i < markers.length - 1; i++) {
-            const startLabel = getLabel(i);
-            const endLabel = getLabel(i + 1);
-            const isActive = (activeLoopIndex === i);
-            const isPlaying = isActive && !video.paused;
-            
-            let btnClass = 'btn-play', btnText = 'Treinar';
-            if (isActive) {
-                if (isPlaying) { btnClass = 'btn-stop'; btnText = 'Parar'; } 
-                else { btnClass = 'btn-resume'; btnText = 'Retomar'; }
+                clearTimeout(clearConfirmTimeout);
+            } else {
+                btnClearMarkers.classList.add('confirm-mode');
+                btnClearMarkers.textContent = "Confirmar Limpeza?";
+                clearConfirmTimeout = setTimeout(() => {
+                    btnClearMarkers.classList.remove('confirm-mode');
+                    btnClearMarkers.textContent = "Limpar Todas as Marcas";
+                }, 3000);
             }
-            
-            const div = document.createElement('div');
-            div.className = `loop-item ${isActive ? 'active-loop' : ''}`;
-            
-            div.innerHTML = `
+        });
+
+        function forceClearAllMarkers(skipSync = false) {
+            markers = [];
+            selectedLoops.clear();
+            isTraining = false;
+            deleteConfirmIndex = -1;
+            clearTimeout(deleteConfirmTimeout);
+            video.pause();
+            if (!skipSync) syncCurrentVideoData();
+            renderLoops();
+        }
+
+        function getLabel(index) {
+            const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            return index < 26 ? letters[index] : letters[Math.floor(index / 26) - 1] + letters[index % 26];
+        }
+
+        window.adjustMarker = function (index, delta) {
+            let newVal = Math.round((markers[index] + delta) * 10) / 10;
+            if (index > 0 && newVal <= markers[index - 1]) newVal = markers[index - 1] + 0.2;
+            if (index < markers.length - 1 && newVal >= markers[index + 1]) newVal = markers[index + 1] - 0.2;
+            if (newVal < 0) newVal = 0;
+
+            markers[index] = Math.round(newVal * 10) / 10;
+            if (video.paused) video.currentTime = markers[index];
+
+            syncCurrentVideoData();
+            renderLoops();
+        };
+
+        // Seleciona/deseleciona trechos. Só permite seleção contígua.
+        window.toggleLoopSelection = function (index) {
+            if (selectedLoops.has(index)) {
+                selectedLoops.delete(index);
+                // Se havia mais de um selecionado, pode ter ficado não-contíguo — mantém só os adjacentes
+                // Estratégia simples: mantém seleção, mas remove o clicado
+            } else {
+                if (selectedLoops.size === 0) {
+                    selectedLoops.add(index);
+                } else {
+                    const sorted = [...selectedLoops].sort((a, b) => a - b);
+                    const min = sorted[0];
+                    const max = sorted[sorted.length - 1];
+                    if (index === min - 1 || index === max + 1) {
+                        selectedLoops.add(index); // contíguo: adiciona
+                    }
+                    // caso contrário: ignora (não é contíguo)
+                }
+            }
+            renderLoops();
+        };
+
+        // Exclui um trecho com duplo clique (confirmação)
+        window.deleteSegment = function (index) {
+            if (deleteConfirmIndex === index) {
+                // Segunda vez: confirma
+                clearTimeout(deleteConfirmTimeout);
+                deleteConfirmIndex = -1;
+
+                // Remove o marcador que elimina o trecho:
+                // primeiro trecho → remove o início (markers[0])
+                // último trecho → remove o fim (markers[markers.length-1])
+                // trecho do meio → remove o fim do trecho (markers[index+1])
+                if (markers.length <= 2) {
+                    forceClearAllMarkers();
+                    return;
+                } else if (index === 0) {
+                    markers.splice(0, 1);
+                } else if (index === markers.length - 2) {
+                    markers.splice(markers.length - 1, 1);
+                } else {
+                    markers.splice(index + 1, 1);
+                }
+
+                selectedLoops.clear();
+                isTraining = false;
+                video.pause();
+                syncCurrentVideoData();
+                renderLoops();
+            } else {
+                // Primeira vez: pede confirmação
+                clearTimeout(deleteConfirmTimeout);
+                deleteConfirmIndex = index;
+                renderLoops();
+                deleteConfirmTimeout = setTimeout(() => {
+                    deleteConfirmIndex = -1;
+                    renderLoops();
+                }, 3000);
+            }
+        };
+
+        function renderLoops() {
+            loopsContainer.innerHTML = '';
+
+            if (markers.length < 2) {
+                loopsPanel.style.display = 'none';
+                return;
+            }
+
+            loopsPanel.style.display = 'flex';
+
+            // Atualiza o botão Treinar/Parar global
+            const hasSelection = selectedLoops.size > 0;
+            btnTrain.disabled = !hasSelection;
+            if (isTraining) {
+                btnTrain.textContent = 'Parar';
+                btnTrain.classList.add('is-training');
+            } else {
+                btnTrain.textContent = 'Treinar';
+                btnTrain.classList.remove('is-training');
+            }
+
+            for (let i = 0; i < markers.length - 1; i++) {
+                const startLabel = getLabel(i);
+                const endLabel = getLabel(i + 1);
+                const isSelected = selectedLoops.has(i);
+                const isPendingDelete = (deleteConfirmIndex === i);
+
+                const div = document.createElement('div');
+                div.className = `loop-item${isSelected ? ' selected-loop' : ''}`;
+                div.addEventListener('click', function (e) {
+                    if (e.target.tagName === 'BUTTON') return; // ignora cliques nos botões
+                    toggleLoopSelection(i);
+                });
+
+                const deleteBtnClass = `btn-delete${isPendingDelete ? ' confirm-delete' : ''}`;
+                const deleteBtnText = isPendingDelete ? '⚠️ Confirmar?' : '🗑️ Excluir';
+
+                div.innerHTML = `
                 <div class="loop-header">
-                    <span>${startLabel} ➔ ${endLabel}</span>
+                    <span>${startLabel} ➔ ${endLabel}${isSelected ? ' ✓' : ''}</span>
                     <div class="header-actions">
-                        ${i < markers.length - 2 ? `<button class="btn-merge-inline" onclick="mergeLoop(${i})">🔗 Juntar</button>` : ''}
-                        <button class="${btnClass}" onclick="toggleLoop(${i})">${btnText}</button>
+                        <button class="${deleteBtnClass}" onclick="deleteSegment(${i})">${deleteBtnText}</button>
                     </div>
                 </div>
-                
+
                 <div class="loop-controls">
                     <div class="time-adjuster">
                         <button onclick="adjustMarker(${i}, -${ADJUST_STEP})">-</button>
@@ -1025,30 +1252,33 @@
                     <span class="arrow-separator">➔</span>
                     <div class="time-adjuster">
                         <button onclick="adjustMarker(${i + 1}, -${ADJUST_STEP})">-</button>
-                        <span class="time-display">${markers[i+1].toFixed(1)}s</span>
+                        <span class="time-display">${markers[i + 1].toFixed(1)}s</span>
                         <button onclick="adjustMarker(${i + 1}, ${ADJUST_STEP})">+</button>
                     </div>
                 </div>
             `;
-            loopsContainer.appendChild(div);
+                loopsContainer.appendChild(div);
+            }
         }
-    }
 
-    function checkLoop() {
-        if (activeLoopIndex !== -1 && markers.length > activeLoopIndex + 1) {
-            let start = markers[activeLoopIndex];
-            let end = markers[activeLoopIndex + 1];
-            if (video.currentTime >= end || video.currentTime < start) video.currentTime = start;
+        function checkLoop() {
+            if (isTraining && selectedLoops.size > 0 && !video.paused) {
+                const sorted = [...selectedLoops].sort((a, b) => a - b);
+                const start = markers[sorted[0]];
+                const end = markers[sorted[sorted.length - 1] + 1];
+                if (end !== undefined && (video.currentTime >= end || video.currentTime < start)) {
+                    video.currentTime = start;
+                }
+            }
+            requestAnimationFrame(checkLoop);
         }
+
+        // Inicialização
+        loadHistoryFromStorage();
         requestAnimationFrame(checkLoop);
-    }
-    
-    // Inicialização
-    loadHistoryFromStorage();
-    requestAnimationFrame(checkLoop);
 
-</script>
+    </script>
 
 </body>
-</html>
 
+</html>
