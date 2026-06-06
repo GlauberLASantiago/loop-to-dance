@@ -248,6 +248,33 @@
             font-weight: bold;
         }
 
+        /* Botão Marcação Automática (Auto) */
+        .btn-auto-mark {
+            background-color: #5c35a0;
+            color: white;
+            font-weight: bold;
+            padding: 12px 10px;
+            font-size: 13px;
+            border-radius: 6px;
+            flex: none;
+            min-width: 72px;
+            width: auto;
+            transition: background-color 0.2s, opacity 0.2s;
+        }
+
+        .btn-auto-mark:active {
+            background-color: #3d2270;
+        }
+
+        .btn-auto-mark.confirm-mode {
+            background-color: #d32f2f;
+        }
+
+        .btn-auto-mark:disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
+
         /* Controles de Input (Range e File) */
         input[type="range"] {
             flex: 2;
@@ -578,6 +605,7 @@
         <div class="control-panel">
             <div class="row">
                 <button id="btnAddMarker" class="btn-main">📍 Marcar (com vídeo em Play)</button>
+                <button id="btnAutoMark" class="btn-auto-mark">🎵 Auto</button>
             </div>
         </div>
 
@@ -670,12 +698,13 @@
 
         // ======== ESTADOS DO APP ========
         let markers = [];
-        let selectedLoops = new Set(); // índices dos trechos selecionados (devem ser contíguos)
-        let isTraining = false;        // se o treinamento está ativo
-        let deleteConfirmIndex = -1;   // índice aguardando confirmação de exclusão
+        let selectedLoops = new Set();
+        let isTraining = false;
+        let deleteConfirmIndex = -1;
         let deleteConfirmTimeout = null;
         let clearConfirmTimeout;
         let historyClearTimeout;
+        let currentFile = null; // referência ao File para análise de áudio
         const ADJUST_STEP = 0.2;
 
         let scale = 1;
@@ -949,7 +978,10 @@
                     };
                 }
 
-                activeLoopIndex = -1;
+                currentFile = file; // guarda referência para Marcação Automática
+
+                selectedLoops.clear();
+                isTraining = false;
                 resetZoom();
                 saveHistoryToStorage();
                 renderLoops();
@@ -961,6 +993,149 @@
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         });
+
+        // ======== MARCAÇÃO AUTOMÁTICA ========
+        const btnAutoMark = document.getElementById('btnAutoMark');
+        let autoMarkConfirmTimeout = null;
+
+        btnAutoMark.addEventListener('click', async () => {
+            if (!currentFile || !currentVideoId) {
+                btnAutoMark.textContent = '⚠️ Carregue um vídeo primeiro';
+                setTimeout(() => { btnAutoMark.textContent = '🎵 Auto'; }, 3000);
+                return;
+            }
+
+            // Se há marcas existentes, pede confirmação antes de substituir
+            if (markers.length > 0 && !btnAutoMark.classList.contains('confirm-mode')) {
+                btnAutoMark.classList.add('confirm-mode');
+                btnAutoMark.textContent = 'Apagar marcas?';
+                autoMarkConfirmTimeout = setTimeout(() => {
+                    btnAutoMark.classList.remove('confirm-mode');
+                    btnAutoMark.textContent = '🎵 Auto';
+                }, 3000);
+                return;
+            }
+
+            // Confirmado (ou sem marcas anteriores): prossegue
+            clearTimeout(autoMarkConfirmTimeout);
+            btnAutoMark.classList.remove('confirm-mode');
+
+            btnAutoMark.disabled = true;
+            btnAutoMark.textContent = '⏳ Decodificando áudio...';
+            await new Promise(r => setTimeout(r, 60));
+
+            try {
+                const arrayBuffer = await currentFile.arrayBuffer();
+                btnAutoMark.textContent = '⏳ Analisando transientes...';
+                await new Promise(r => setTimeout(r, 60));
+
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                audioCtx.close();
+
+                btnAutoMark.textContent = '⏳ Criando marcas...';
+                await new Promise(r => setTimeout(r, 60));
+
+                const newMarkers = analyzeTransients(audioBuffer);
+
+                if (newMarkers.length < 2) {
+                    btnAutoMark.textContent = '⚠️ Poucos trechos detectados';
+                } else {
+                    markers = newMarkers;
+                    selectedLoops.clear();
+                    isTraining = false;
+                    syncCurrentVideoData();
+                    renderLoops();
+                    btnAutoMark.textContent = `✅ ${newMarkers.length - 1} trechos criados`;
+                }
+            } catch (err) {
+                console.error('Erro na análise de áudio:', err);
+                btnAutoMark.textContent = '❌ Erro ao analisar áudio';
+            }
+
+            setTimeout(() => {
+                btnAutoMark.disabled = false;
+                btnAutoMark.textContent = '🎵 Auto';
+            }, 4000);
+        });
+
+        // Detecta transientes no AudioBuffer e retorna array de timestamps (em segundos)
+        // para cada início de grupo de 8 transientes, com gap mínimo de 2s.
+        function analyzeTransients(audioBuffer) {
+            const sampleRate = audioBuffer.sampleRate;
+            const length = audioBuffer.length;
+
+            // --- Mistura todos os canais em mono ---
+            const numCh = audioBuffer.numberOfChannels;
+            const mono = new Float32Array(length);
+            for (let c = 0; c < numCh; c++) {
+                const ch = audioBuffer.getChannelData(c);
+                for (let i = 0; i < length; i++) mono[i] += ch[i] / numCh;
+            }
+
+            // --- Soma acumulada de quadrados para RMS eficiente ---
+            const cumSq = new Float64Array(length + 1);
+            for (let i = 0; i < length; i++) cumSq[i + 1] = cumSq[i] + mono[i] * mono[i];
+
+            // --- Parâmetros de frame ---
+            const frameSize = Math.round(sampleRate * 0.023); // ~23ms
+            const hopSize  = Math.round(sampleRate * 0.010); // ~10ms
+            const numFrames = Math.floor((length - frameSize) / hopSize);
+
+            // --- Log-RMS por frame ---
+            const MIN_LOG = 1e-10;
+            const logRMS = new Float32Array(numFrames);
+            for (let f = 0; f < numFrames; f++) {
+                const s = f * hopSize;
+                const e = Math.min(s + frameSize, length);
+                const sumSq = cumSq[e] - cumSq[s];
+                logRMS[f] = Math.log(Math.sqrt(sumSq / frameSize) + MIN_LOG);
+            }
+
+            // --- Força de onset: derivada positiva do log-RMS (retificada) ---
+            const strength = new Float32Array(numFrames);
+            for (let f = 1; f < numFrames; f++) {
+                strength[f] = Math.max(0, logRMS[f] - logRMS[f - 1]);
+            }
+
+            // --- Seleção de picos com limiar adaptativo local ---
+            const localWin = Math.round(0.40 / (hopSize / sampleRate)); // janela de 400ms (contexto mais amplo)
+            const delta = 0.20;              // só detecta transientes muito fortes (sapateado)
+            const MIN_ONSET_GAP_S = 0.25;   // mínimo 250ms entre batidas (~240 BPM max)
+            const MIN_ONSET_GAP = Math.round(MIN_ONSET_GAP_S / (hopSize / sampleRate));
+
+            const onsetFrames = [];
+            for (let f = 1; f < numFrames - 1; f++) {
+                if (strength[f] <= strength[f - 1]) continue;
+                if (strength[f] <= strength[f + 1]) continue;
+
+                // Média local
+                let sum = 0, cnt = 0;
+                for (let w = Math.max(0, f - localWin); w <= Math.min(numFrames - 1, f + localWin); w++) {
+                    sum += strength[w]; cnt++;
+                }
+
+                if (strength[f] > sum / cnt + delta) {
+                    if (onsetFrames.length === 0 || f - onsetFrames[onsetFrames.length - 1] >= MIN_ONSET_GAP) {
+                        onsetFrames.push(f);
+                    }
+                }
+            }
+
+            // --- Agrupa em grupos de 8: marca no início de cada grupo ---
+            const MIN_MARK_GAP = 2.0;
+            const resultMarkers = [];
+
+            for (let i = 0; i < onsetFrames.length; i += 8) {
+                const time = Math.round((onsetFrames[i] * hopSize / sampleRate) * 10) / 10;
+                const lastMark = resultMarkers.length > 0 ? resultMarkers[resultMarkers.length - 1] : -Infinity;
+                if (time - lastMark >= MIN_MARK_GAP) {
+                    resultMarkers.push(time);
+                }
+            }
+
+            return resultMarkers;
+        }
 
         // ======== CONTROLES DE VELOCIDADE E ZOOM ========
         speedSlider.addEventListener('input', function () {
