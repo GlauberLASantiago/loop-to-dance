@@ -10,7 +10,9 @@ Aplicativo web para prática de dança com vídeo. Permite carregar vídeos loca
 - **Marcação automática (🎵 Auto)** — detecta automaticamente transientes de áudio para sugerir marcações no ritmo da música
 - **Treino por loops** — selecione um ou mais loops e entre no modo treino para repeti-los em sequência
 - **Controle de velocidade** — ajuste a velocidade de reprodução de 0.25x a 2.00x
-- **Zoom e pan** — amplie o vídeo e navegue com arraste (suporte a pinça em dispositivos touch)
+- **Zoom e pan** - amplie o vídeo com ajuste fino e navegue com arraste do mouse ou do dedo (suporte a pinça em dispositivos touch)
+- **Espelhar vídeo** - inverte o vídeo na horizontal, útil para acompanhar a coreografia como em um espelho
+- **Layout para desktop** - em telas largas, os trechos da coreografia ficam ao lado do vídeo, e velocidade, zoom e espelhar ficam na mesma linha
 - **PWA** — pode ser adicionado à tela inicial como um app
 
 ## 🚀 Como usar
@@ -22,6 +24,7 @@ Aplicativo web para prática de dança com vídeo. Permite carregar vídeos loca
 4. Os pares de marcações formam loops que aparecem na lista
 5. Selecione os loops desejados e clique em **Treinar** para repetir os trechos
 6. Use os sliders de **Velocidade** e **Zoom** conforme necessário
+7. Se precisar, use **↔ Espelhar vídeo** para inverter a imagem
 
 ## 🛠️ Tecnologias
 
@@ -40,3 +43,11 @@ Funciona em navegadores modernos, incluindo Chrome e Safari em dispositivos móv
 loop-to-dance/
 └── index.html   # Aplicação completa (single-file)
 ```
+
+## ✍️ Créditos
+
+Desenvolvido pelo professor Glauber Santiago — DAC/UFSCar
+
+- [aprenda-musica-comigo.web.app](https://aprenda-musica-comigo.web.app/)
+- [servidores.ufscar.br/glauber/](https://servidores.ufscar.br/glauber/)
+- [glauberia.web.app](https://glauberia.web.app/)
