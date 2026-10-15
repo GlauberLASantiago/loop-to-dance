@@ -136,6 +136,59 @@
             transition: transform 0.1s ease-out;
         }
 
+        /* Zoom: cursor de arraste */
+        .video-wrapper.can-pan { cursor: grab; }
+        .video-wrapper.can-pan:active { cursor: grabbing; }
+
+        .btn-mirror {
+            background: #2a2a2a;
+            color: #fff;
+            border: 1px solid #555;
+            border-radius: 6px;
+            padding: 8px 14px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .btn-mirror:hover { border-color: var(--accent); }
+        .btn-mirror.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: bold; }
+
+        .stage { display: flex; flex-direction: column; gap: 15px; }
+        .main-col { display: flex; flex-direction: column; gap: 15px; min-width: 0; }
+        .side-col { display: flex; flex-direction: column; gap: 15px; min-width: 0; }
+
+        .footer a { color: #ff9800; text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
+
+        /* Desktop: trechos na lateral do video */
+        @media (min-width: 1000px) {
+            .container { max-width: 1300px; }
+            .stage {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) 380px;
+                gap: 20px;
+                align-items: start;
+            }
+            .video-area { padding: 0; }
+            .scroll-hint { display: none; }
+            /* Velocidade, Zoom e Espelhar na mesma linha */
+            .control-panel.top-controls { flex-direction: row; align-items: center; gap: 24px; }
+            .control-panel.top-controls .row { flex: 1 1 0; min-width: 0; }
+            .control-panel.top-controls .row:last-child { flex: 0 0 auto; }
+            .control-panel.top-controls .row span:first-child { width: auto !important; white-space: nowrap; }
+            .btn-mirror { white-space: nowrap; }
+            video { max-height: 78vh; }
+            /* Sem "sangrar" a tela no desktop: o zoom nao altera o layout */
+            .video-wrapper.is-zoomed {
+                width: 100%;
+                left: auto;
+                transform: none;
+                border-radius: 8px;
+                border: 1px solid #444;
+            }
+            .video-wrapper.is-zoomed .video-scroll-strip { display: none; }
+        }
+
         /* Paineis */
         .control-panel {
             background-color: var(--panel-bg);
@@ -571,6 +624,8 @@
     <div class="container">
         <h1 class="header">🩰 Loop to Dance</h1>
 
+        <div class="stage">
+        <div class="main-col">
         <label class="file-label">
             📁 Selecionar Vídeo (Restaura Salvos)
             <input type="file" id="videoUpload" accept="video/*">
@@ -585,8 +640,11 @@
             </div>
             <div class="row">
                 <span style="font-size: 14px; width: 85px;">Zoom:</span>
-                <input type="range" id="zoomSlider" min="1" max="4" step="0.1" value="1">
+                <input type="range" id="zoomSlider" min="1" max="4" step="0.02" value="1">
                 <span class="control-val" id="zoomValue">1.0x</span>
+            </div>
+            <div class="row">
+                <button id="btnMirror" class="btn-mirror" type="button" aria-pressed="false">&#8596; Espelhar v&iacute;deo</button>
             </div>
         </div>
 
@@ -600,6 +658,10 @@
                 <div class="video-scroll-strip video-scroll-strip-right" id="scrollStripR"></div>
             </div>
         </div>
+
+        </div><!-- /main-col -->
+
+        <div class="side-col">
 
         <!-- Painel de Marcação -->
         <div class="control-panel">
@@ -622,6 +684,8 @@
             </div>
             <button id="btnClearMarkers" class="btn-danger">Limpar Todas as Marcas</button>
         </div>
+        </div><!-- /side-col -->
+        </div><!-- /stage -->
 
         <!-- Histórico de Vídeos -->
         <div class="control-panel">
@@ -641,7 +705,10 @@
     </div>
 
     <footer class="footer">
-        Desenvolvido por Glauber Santiago
+        Desenvolvido pelo professor Glauber Santiago &mdash; DAC/UFSCar<br>
+        <a href="https://aprenda-musica-comigo.web.app/" target="_blank" rel="noopener">aprenda-musica-comigo.web.app</a> &bull;
+        <a href="https://servidores.ufscar.br/glauber/" target="_blank" rel="noopener">servidores.ufscar.br/glauber/</a> &bull;
+        <a href="https://glauberia.web.app/" target="_blank" rel="noopener">glauberia.web.app</a>
     </footer>
 
     <!-- Modal Customizado para Solicitar Arquivo -->
@@ -1150,6 +1217,16 @@
             applyTransform();
         });
 
+        // Espelhar video (inverte horizontalmente)
+        let mirrored = false;
+        const btnMirror = document.getElementById('btnMirror');
+        btnMirror.addEventListener('click', () => {
+            mirrored = !mirrored;
+            btnMirror.classList.toggle('active', mirrored);
+            btnMirror.setAttribute('aria-pressed', mirrored);
+            applyTransform();
+        });
+
         function resetZoom() {
             scale = 1; translateX = 0; translateY = 0;
             zoomSlider.value = 1;
@@ -1167,7 +1244,8 @@
             const maxTy = (video.clientHeight * scale - videoContainer.clientHeight) / 2;
             translateX = maxTx > 0 ? Math.max(Math.min(translateX, maxTx), -maxTx) : 0;
             translateY = maxTy > 0 ? Math.max(Math.min(translateY, maxTy), -maxTy) : 0;
-            video.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+            video.style.transform = `translate(${translateX}px, ${translateY}px) scale(${mirrored ? -scale : scale}, ${scale})`;
+            videoContainer.classList.toggle('can-pan', scale > 1);
             zoomSlider.value = scale;
             zoomValue.textContent = scale.toFixed(1) + 'x';
         }
@@ -1203,12 +1281,27 @@
             } else if (e.touches.length === 2) {
                 e.preventDefault();
                 const currentDistance = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                scale = Math.max(1, Math.min(scale + (currentDistance - lastDistance) * 0.01, 4));
+                if (lastDistance > 0) scale = Math.max(1, Math.min(scale * (currentDistance / lastDistance), 4));
                 lastDistance = currentDistance;
                 applyTransform();
             }
         }, { passive: false });
 
+        // Arrastar com o mouse (desktop) quando houver zoom
+        let mouseDown = false;
+        videoContainer.addEventListener('mousedown', (e) => {
+            if (scale <= 1 || e.offsetY > video.clientHeight - 50) return; // preserva a barra de controles
+            mouseDown = true;
+            startX = e.clientX - translateX;
+            startY = e.clientY - translateY;
+        });
+        window.addEventListener('mousemove', (e) => {
+            if (!mouseDown) return;
+            translateX = e.clientX - startX;
+            translateY = e.clientY - startY;
+            applyTransform();
+        });
+        window.addEventListener('mouseup', () => { mouseDown = false; });
         videoContainer.addEventListener('touchend', () => {
             isDragging = false;
             touchOnStrip = false;
